@@ -1,37 +1,64 @@
-version: '2'
+version: "3.8"
+
 services:
-  mariadb:
-    image: docker.io/bitnami/mariadb:10.6
-    environment:
-      # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      - ALLOW_EMPTY_PASSWORD=yes
-      - MARIADB_USER=bn_moodle
-      - MARIADB_DATABASE=bitnami_moodle
-      - MARIADB_CHARACTER_SET=utf8mb4
-      - MARIADB_COLLATE=utf8mb4_unicode_ci
-    volumes:
-      - 'mariadb_data:/bitnami/mariadb'
-  moodle:
-    image: docker.io/bitnami/moodle:4
+  db:
+    image: bitnami/mariadb:10.10
+    container_name: mariadb
     ports:
-      - '80:8080'
-      - '443:8443'
+      - 3306:3306
     environment:
-      - MOODLE_DATABASE_HOST=mariadb
-      - MOODLE_DATABASE_PORT_NUMBER=3306
-      - MOODLE_DATABASE_USER=bn_moodle
-      - MOODLE_DATABASE_NAME=bitnami_moodle
       # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      - ALLOW_EMPTY_PASSWORD=yes
+      ALLOW_EMPTY_PASSWORD: yes
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_CHARACTER_SET: utf8mb4
+      MARIADB_COLLATE: utf8mb4_unicode_ci
+    healthcheck:
+      test: mysqladmin ping
     volumes:
-      - 'moodle_data:/bitnami/moodle'
-      - 'moodledata_data:/bitnami/moodledata'
+      - type: volume
+        source: mariadb_data
+        target: /bitnami/mariadb
+
+  smtp:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - 8025:8025
+
+  app:
+    image: ahamana/moodle:4
+    container_name: moodle
+    ports:
+      - 80:8080
+      - 443:8443
+    environment:
+      MOODLE_USERNAME: ${MOODLE_USERNAME}
+      MOODLE_PASSWORD: ${MOODLE_PASSWORD}
+      MOODLE_EMAIL: ${MOODLE_EMAIL}
+      MOODLE_SITE_NAME: ${MOODLE_SITE_NAME}
+      MOODLE_DATABASE_HOST: db
+      MOODLE_DATABASE_PORT_NUMBER: 3306
+      MOODLE_DATABASE_USER: ${MARIADB_USER}
+      MOODLE_DATABASE_NAME: ${MARIADB_DATABASE}
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      ALLOW_EMPTY_PASSWORD: yes
+      MOODLE_SMTP_HOST: smtp
+      MOODLE_SMTP_PORT: 1025
+    volumes:
+      - type: volume
+        source: moodle_data
+        target: /bitnami/moodle
+      - type: volume
+        source: moodledata_data
+        target: /bitnami/moodledata
     depends_on:
-      - mariadb
+      db:
+        condition: service_healthy
+      smtp:
+        condition: service_started
+
 volumes:
   mariadb_data:
-    driver: local
   moodle_data:
-    driver: local
   moodledata_data:
-    driver: local

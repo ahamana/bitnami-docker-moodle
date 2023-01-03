@@ -87,7 +87,7 @@ moodle_validate() {
     fi
 
     # Support for MySQL and MariaDB
-    check_multi_value "MOODLE_DATABASE_TYPE" "mysqli mariadb pgsql"
+    check_multi_value "MOODLE_DATABASE_TYPE" "mysqli mariadb pgsql auroramysql"
 
     # Check that the web server is properly set up
     web_server_validate || print_validation_error "Web server validation failed"
@@ -145,7 +145,7 @@ moodle_initialize() {
         db_name="$MOODLE_DATABASE_NAME"
         db_user="$MOODLE_DATABASE_USER"
         db_pass="$MOODLE_DATABASE_PASSWORD"
-        [[ "$db_type" = "mariadb" || "$db_type" = "mysqli" ]] && moodle_wait_for_mysql_connection "$db_host" "$db_port" "$db_name" "$db_user" "$db_pass"
+        [[ "$db_type" = "mariadb" || "$db_type" = "mysqli" || "$db_type" = "auroramysql" ]] && moodle_wait_for_mysql_connection "$db_host" "$db_port" "$db_name" "$db_user" "$db_pass"
         [[ "$db_type" = "pgsql" ]] && moodle_wait_for_postgresql_connection "$db_host" "$db_port" "$db_name" "$db_user" "$db_pass"
 
         # Create Moodle install argument list, allowing to pass custom options via 'MOODLE_INSTALL_EXTRA_ARGS'
@@ -204,7 +204,7 @@ EOF
         db_name="$(moodle_conf_get "\$CFG->dbname")"
         db_user="$(moodle_conf_get "\$CFG->dbuser")"
         db_pass="$(moodle_conf_get "\$CFG->dbpass")"
-        [[ "$db_type" = "mariadb" || "$db_type" = "mysqli" ]] && moodle_wait_for_mysql_connection "$db_host" "$db_port" "$db_name" "$db_user" "$db_pass"
+        [[ "$db_type" = "mariadb" || "$db_type" = "mysqli" || "$db_type" = "auroramysql" ]] && moodle_wait_for_mysql_connection "$db_host" "$db_port" "$db_name" "$db_user" "$db_pass"
         [[ "$db_type" = "pgsql" ]] && moodle_wait_for_postgresql_connection "$db_host" "$db_port" "$db_name" "$db_user" "$db_pass"
 
         # Perform Moodle database schema upgrade
@@ -263,7 +263,7 @@ moodle_conf_get() {
 # Returns:
 #   true if the database connection succeeded, false otherwise
 #########################
-moodle_wait_for_mysql_connection () {
+moodle_wait_for_mysql_connection() {
     local -r db_host="${1:?missing database host}"
     local -r db_port="${2:?missing database port}"
     local -r db_name="${3:?missing database name}"
@@ -291,7 +291,7 @@ moodle_wait_for_mysql_connection () {
 # Returns:
 #   true if the database connection succeeded, false otherwise
 #########################
-moodle_wait_for_postgresql_connection  () {
+moodle_wait_for_postgresql_connection() {
     local -r db_host="${1:?missing database host}"
     local -r db_port="${2:?missing database port}"
     local -r db_name="${3:?missing database name}"
@@ -320,7 +320,7 @@ moodle_install() {
     local -a moodle_install_args=(
         "${PHP_BIN_DIR}/php"
         "admin/cli/install.php"
-        "--lang=en"
+        "--lang=${MOODLE_LANG}"
         "--chmod=2775"
         "--wwwroot=http://localhost:${http_port}"
         "--dataroot=${MOODLE_DATA_DIR}"
@@ -388,14 +388,20 @@ moodle_configure_wwwroot() {
     # sed replacement notes:
     # - The ampersand ('&') is escaped due to sed replacing any non-escaped ampersand characters with the matched string
     # - For the replacement text to be multi-line, an \ needs to be specified to escape the newline character
-    local -r conf_to_replace="if (empty(\$_SERVER['HTTP_HOST'])) {\\
+    local conf_to_replace="if (empty(\$_SERVER['HTTP_HOST'])) {\\
   \$_SERVER['HTTP_HOST'] = '127.0.0.1:${http_port}';\\
-}\\
+}"
+    if is_boolean_yes "$MOODLE_SSLPROXY"; then
+        conf_to_replace="$conf_to_replace\\
+\$CFG->wwwroot   = 'https://' . ${host};"
+    else
+        conf_to_replace="$conf_to_replace\\
 if (isset(\$_SERVER['HTTPS']) \&\& \$_SERVER['HTTPS'] == 'on') {\\
   \$CFG->wwwroot   = 'https://' . ${host};\\
 } else {\\
   \$CFG->wwwroot   = 'http://' . ${host};\\
 }"
+    fi
     replace_in_file "$MOODLE_CONF_FILE" "\\\$CFG->wwwroot\s*=.*" "$conf_to_replace"
 }
 
@@ -410,9 +416,9 @@ if (isset(\$_SERVER['HTTPS']) \&\& \$_SERVER['HTTPS'] == 'on') {\\
 #########################
 moodle_configure_reverseproxy() {
     # Checking the reverseproxy setting values
-    is_boolean_yes "$MOODLE_REVERSEPROXY" && echo "\$CFG->reverseproxy = true;" >> "$MOODLE_CONF_FILE"
+    is_boolean_yes "$MOODLE_REVERSEPROXY" && sed -i "/^require/i \$CFG->reverseproxy = true;" "$MOODLE_CONF_FILE"
     # Checking the sslproxy setting values
-    is_boolean_yes "$MOODLE_SSLPROXY" && echo "\$CFG->sslproxy = true;" >> "$MOODLE_CONF_FILE"
+    is_boolean_yes "$MOODLE_SSLPROXY" && sed -i "/^require/i \$CFG->sslproxy = true;" "$MOODLE_CONF_FILE"
 
     true
 }

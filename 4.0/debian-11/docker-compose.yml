@@ -27,7 +27,7 @@ services:
       - 8025:8025
 
   app:
-    image: ahamana/moodle:4
+    image: ahamana/moodle:4.0
     container_name: moodle
     ports:
       - 80:8080

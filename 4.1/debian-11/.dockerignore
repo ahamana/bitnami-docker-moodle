@@ -1,0 +1,6 @@
+*.bat
+*.sh
+.dockerignore
+.env
+Dockerfile
+docker-compose.yml

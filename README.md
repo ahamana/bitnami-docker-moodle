@@ -121,7 +121,7 @@ Access your application at `http://your-ip/`
 
 If you remove the container all your data will be lost, and the next time you run the image the database will be reinitialized. To avoid this loss of data, you should mount a volume that will persist even after the container is removed.
 
-For persistence you should mount a directory at the `/bitnami/moodle` path. If the mounted directory is empty, it will be initialized on the first run. Additionally you should mount a volume for persistence of the MariaDB data](https://github.com/bitnami/containers/blob/main/bitnami/mariadb#persisting-your-database).
+For persistence you should mount a directory at the `/bitnami/moodle` path. If the mounted directory is empty, it will be initialized on the first run. Additionally you should mount a volume for persistence of the [MariaDB data](https://github.com/bitnami/containers/blob/main/bitnami/mariadb#persisting-your-database).
 
 The above examples define the Docker volumes named mariadb_data and moodle_data. The Moodle&trade; application state will persist as long as volumes are not removed.
 
@@ -444,6 +444,8 @@ docker-compose logs moodle
 ```
 
 You can configure the containers [logging driver](https://docs.docker.com/engine/admin/logging/overview/) using the `--log-driver` option if you wish to consume the container logs differently. In the default configuration docker uses the `json-file` driver.
+
+By default, the logging of debug information is disabled. You can enable it by setting the environment variable `BITNAMI_DEBUG` to `true`.
 
 ## Maintenance
 

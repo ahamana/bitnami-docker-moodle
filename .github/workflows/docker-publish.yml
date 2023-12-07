@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         moodle-version:
-          - "3"
           - "4.0"
           - "4.1"
           - "4.2"

@@ -164,7 +164,6 @@ moodle_initialize() {
                 break
             fi
         done
-        
         # Setup Moodle
         if ! is_boolean_yes "$MOODLE_SKIP_BOOTSTRAP"; then
             info "Running Moodle install script"
@@ -175,7 +174,7 @@ moodle_initialize() {
             [[ "$db_type" = "pgsql" ]] && db_remote_execute="postgresql_remote_execute"
             local -a db_execute_args=("$db_host" "$db_port" "$db_name" "$db_user" "$db_pass")
             # Configure no-reply e-mail address for SMTP
-            echo "INSERT INTO ${mdl_prefix}config (name, value) VALUES ('noreplyaddress', '${MOODLE_EMAIL}')" | "$db_remote_execute" "${db_execute_args[@]}"
+	    echo "INSERT INTO ${mdl_prefix}config (name, value) VALUES ('noreplyaddress', '${MOODLE_EMAIL}')" | "$db_remote_execute" "${db_execute_args[@]}"
             # Additional Bitnami customizations
             echo "UPDATE ${mdl_prefix}course SET summary='Moodle powered by Bitnami' WHERE id='1'" | "$db_remote_execute" "${db_execute_args[@]}"
             # SMTP configuration

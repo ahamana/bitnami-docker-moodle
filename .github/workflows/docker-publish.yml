@@ -17,6 +17,7 @@ jobs:
           - "4.1"
           - "4.2"
           - "4.3"
+          - "4.4"
 
     steps:
       - name: Checkout repository
@@ -37,7 +38,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{ defaultContext }}:${{ matrix.moodle-version }}/debian-11"
+          context: "{{ defaultContext }}:${{ matrix.moodle-version }}/debian-12"
           build-args: |
             WITH_ALL_LOCALES=yes
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/moodle:${{ matrix.moodle-version }}

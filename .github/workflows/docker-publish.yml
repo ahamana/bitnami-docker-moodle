@@ -23,6 +23,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ github.repository_owner }}/moodle
+          tags: ${{ matrix.moodle-version }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -41,5 +48,5 @@ jobs:
           context: "{{ defaultContext }}:${{ matrix.moodle-version }}/debian-12"
           build-args: |
             WITH_ALL_LOCALES=yes
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/moodle:${{ matrix.moodle-version }}
+          tags: ${{ steps.meta.outputs.tags }}
           push: true

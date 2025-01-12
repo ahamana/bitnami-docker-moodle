@@ -3,4 +3,4 @@
 .dockerignore
 .env
 Dockerfile
-docker-compose.yml
+compose.yml

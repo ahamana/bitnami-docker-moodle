@@ -1,6 +1,6 @@
 services:
   db:
-    image: bitnami/mariadb:latest
+    image: bitnami/mariadb
     container_name: mariadb
     ports:
       - 3306:3306
